@@ -1,24 +1,43 @@
 ---
-- name: Configure IPV6
-  hosts: routers
+- name: Basic Cisco Router Configuration
+  hosts: router
   gather_facts: no
+  connection: network_cli
+  vars:
+    console_password: "cisco"
+    enable_secret: "class"
 
   tasks:
-    - name: Configure Interface
+    - name: Set hostname
       ios_config:
-        parents: "Interface GigabitEthernet1"
         lines:
-          - description IPV6 ADDRESS
-          - ipv6 address 2001:db8:acad:1::1/64
-          - ipv6 address fe80::1:1 link-local
+          - hostname R1
 
-    - name: Show IPv6
-      ios_command:
-        commands:
-          - show ipv6 interface brief
-      register: output
+    - name: Configure console line
+      ios_config:
+        lines:
+          - line console 0
+          - password {{ console_password }}
+          - login
 
-    - name: Save the IPv6
-      copy:
-        content: "{{ output.stdout[0] }}"
-        dest: "ios_module/IPV6_output_{{ inventory_hostname }}.txt"
+    - name: Set enable secret
+      ios_config:
+        lines:
+          - enable secret {{ enable_secret }}
+
+    - name: Configure password encryption
+      ios_config:
+        lines:
+          - service password-encryption
+
+    - name: Set banner
+      ios_config:
+        lines:
+          - banner motd "Unauthorized access is prohibited!"
+
+    - name: Save configuration
+      ios_config:
+        save_when: always
+
+
+
